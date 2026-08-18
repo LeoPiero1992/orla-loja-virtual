@@ -14,7 +14,7 @@ export function packageFor(items) {
   return {
     Height: 10,
     Width: 15,
-    Length: 30,
+    Length: 35,
     Weight: Math.max(0.1, Number(weight.toFixed(3))),
     Quantity: 1,
     SKU: "ORLA-PEDIDO",
