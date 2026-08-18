@@ -1,0 +1,6 @@
+# Copie este arquivo como .dev.vars somente no ambiente local.
+# Nunca publique nem envie o Access Token por mensagem.
+MERCADO_PAGO_ACCESS_TOKEN="COLE_A_CREDENCIAL_DE_TESTE_APENAS_NO_AMBIENTE_PROTEGIDO"
+MERCADO_PAGO_ENV="sandbox"
+FRENET_TOKEN="COLE_O_TOKEN_SOMENTE_NO_AMBIENTE_PROTEGIDO"
+FRENET_SELLER_CEP="CEP_DE_ORIGEM_SOMENTE_NUMEROS"
