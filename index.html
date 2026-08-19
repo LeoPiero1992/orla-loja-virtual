@@ -83,13 +83,20 @@ setLanguage(orlaLanguage);
 function decorateVariantCard(card){
   const product=products.find(entry=>entry.ref===card.dataset.ref),select=card.querySelector('.variant-select.color'),photo=card.querySelector('.product-photo'),size=card.querySelector('.variant-select.size'),buy=card.querySelector('.buy');
   if(!product||!select||!photo||!size||!buy)return;
-  const variant=product.variants[Number(select.value)||0],usable=product.variants.filter(entry=>entry.img);
+  const variant=product.variants[Number(select.value)||0],usable=product.variants.filter(entry=>variantStock(product,entry)>0);
   photo.innerHTML=`<div class="product-photo-media">${photoMarkup(product,variant)}</div>${usable.length>1?`<button class="variant-step prev" type="button" onclick="stepVariant(this,-1)" aria-label="Estampa anterior">‹</button><button class="variant-step next" type="button" onclick="stepVariant(this,1)" aria-label="Próxima estampa">›</button><span class="photo-variant-label">${esc(variant.code)} · ${esc(variant.color)}</span>`:''}<div class="photo-purchase"></div>`;
   photo.querySelector('.photo-purchase').append(size,buy);
 }
-function decorateVariantCards(){document.querySelectorAll('.product').forEach(decorateVariantCard)}
+function filterUnavailableVariants(card){
+  const product=products.find(entry=>entry.ref===card.dataset.ref),select=card.querySelector('.variant-select.color');
+  if(!product||!select)return;
+  if(productStock(product)<=0){select.hidden=true;return}
+  [...select.options].forEach(option=>{if(variantStock(product,product.variants[Number(option.value)])<=0)option.remove()});
+  select.hidden=false;
+}
+function decorateVariantCards(){document.querySelectorAll('.product').forEach(card=>{filterUnavailableVariants(card);decorateVariantCard(card)})}
 function stepVariant(button,direction){
-  const card=button.closest('.product'),product=products.find(entry=>entry.ref===card.dataset.ref),select=card.querySelector('.variant-select.color'),usable=product.variants.map((variant,index)=>variant.img?index:-1).filter(index=>index>=0),current=usable.indexOf(Number(select.value)),next=usable[(current+direction+usable.length)%usable.length];
+  const card=button.closest('.product'),product=products.find(entry=>entry.ref===card.dataset.ref),select=card.querySelector('.variant-select.color'),usable=product.variants.map((variant,index)=>variantStock(product,variant)>0?index:-1).filter(index=>index>=0),current=usable.indexOf(Number(select.value)),next=usable[(current+direction+usable.length)%usable.length];
   select.value=String(next);changeVariant(select);
 }
 const drawProductsBeforeVariantSteps=drawProducts;
