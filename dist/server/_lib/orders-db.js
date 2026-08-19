@@ -137,6 +137,17 @@ export async function getCustomerOrder(env, id, email, cpf) {
   return order;
 }
 
+export async function hasCompletedOrder(env, email, cpf) {
+  await ensureOrdersSchema(env);
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedCpf = String(cpf || "").replace(/\D/g, "");
+  const order = await env.DB.prepare(`SELECT id FROM orders
+    WHERE (lower(customer_email)=? OR customer_cpf=?)
+      AND (payment_status='approved' OR status IN ('paid','picking','checking','ready','shipped','delivered'))
+    LIMIT 1`).bind(normalizedEmail, normalizedCpf).first();
+  return Boolean(order);
+}
+
 export async function updateOrder(env, id, changes, actor) {
   await ensureOrdersSchema(env);
   const current = await getOrder(env, id);
