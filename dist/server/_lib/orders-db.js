@@ -55,6 +55,7 @@ export async function ensureOrdersSchema(env) {
     )`),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON orders(customer_email)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_order_events_order_id ON order_events(order_id, created_at)")
   ]);
@@ -124,6 +125,16 @@ export async function getOrder(env, id) {
     env.DB.prepare("SELECT * FROM order_events WHERE order_id=? ORDER BY created_at, id").bind(id).all()
   ]);
   return { ...order, address: JSON.parse(order.address_json || "{}"), items, events };
+}
+
+export async function getCustomerOrder(env, id, email, cpf) {
+  const order = await getOrder(env, id);
+  if (!order) return null;
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedCpf = String(cpf || "").replace(/\D/g, "");
+  if (String(order.customer_email || "").trim().toLowerCase() !== normalizedEmail) return null;
+  if (String(order.customer_cpf || "").replace(/\D/g, "") !== normalizedCpf) return null;
+  return order;
 }
 
 export async function updateOrder(env, id, changes, actor) {
