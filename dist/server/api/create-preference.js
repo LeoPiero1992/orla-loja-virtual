@@ -1,5 +1,5 @@
 import { FREE_SHIPPING_MINIMUM, quoteFrenet } from "../_lib/frenet.js";
-import { createOrder } from "../_lib/orders-db.js";
+import { createOrder, hasCompletedOrder } from "../_lib/orders-db.js";
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -7,6 +7,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 });
 
 const digits = value => String(value || "").replace(/\D/g, "");
+const normalizeCoupon = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toUpperCase();
 
 async function loadStoreData(env, origin, filename, prefix) {
   const response = await env.ASSETS.fetch(`${origin}/${filename}`);
@@ -72,7 +73,15 @@ export async function onRequestPost({ request, env }) {
       if (quantity > official.available) throw new Error(`${official.name} nao possui essa quantidade em estoque.`);
       return { ...official, quantity };
     });
-    const items = validatedItems.map(official => {
+    const couponCode = normalizeCoupon(body.couponCode);
+    let discountPercent = 0;
+    if (couponCode) {
+      if (couponCode !== "PRIMEIRA COMPRA") return json({ error: "Cupom não encontrado." }, 404);
+      if (await hasCompletedOrder(env, customer.email, customer.cpf)) return json({ error: "Este cupom é exclusivo para a primeira compra." }, 409);
+      discountPercent = 15;
+    }
+    const orderItems = validatedItems.map(item => ({ ...item, price: Math.round(item.price * (1 - discountPercent / 100) * 100) / 100 }));
+    const items = orderItems.map(official => {
       return {
         id: official.sku,
         title: `${official.name} - ${official.color} - ${official.size}`.slice(0, 250),
@@ -84,16 +93,17 @@ export async function onRequestPost({ request, env }) {
       };
     });
 
+    const originalSubtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
     let shipping = { code: "FREE", carrier: "ORLA", name: "Frete gratis", price: 0, deliveryTime: 0 };
-    if (subtotal < FREE_SHIPPING_MINIMUM) {
+    if (originalSubtotal < FREE_SHIPPING_MINIMUM) {
       const requestedService = String(body.shippingServiceCode || "");
       if (!requestedService) return json({ error: "Escolha uma opcao de frete antes de continuar." }, 409);
       const options = await quoteFrenet({
         env,
         recipientCep: customer.cep,
-        subtotal,
-        items: validatedItems,
+        subtotal: originalSubtotal,
+        items: orderItems,
         serviceCode: requestedService,
       });
       shipping = options.find(option => option.code === requestedService);
@@ -139,6 +149,9 @@ export async function onRequestPost({ request, env }) {
         shipping_carrier: shipping.carrier,
         shipping_service: shipping.name,
         shipping_days: shipping.deliveryTime,
+        coupon_code: couponCode,
+        discount_percent: discountPercent,
+        original_subtotal: originalSubtotal,
       },
     };
 
@@ -182,7 +195,7 @@ export async function onRequestPost({ request, env }) {
         bairro: String(customer.bairro || ""), complemento: String(customer.complemento || ""),
         cidade: String(customer.cidade || ""), estado: String(customer.estado || ""),
       },
-      items: validatedItems,
+      items: orderItems,
       shipping,
       subtotal,
       total: subtotal + Number(shipping.price || 0),
