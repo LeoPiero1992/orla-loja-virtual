@@ -155,12 +155,14 @@ export async function onRequestPost({ request, env }) {
       },
     };
 
-    const isPublicHttps = url.protocol === "https:" && !/localhost|127\.0\.0\.1/.test(url.hostname);
+    const requestedStoreOrigin = String(request.headers.get("x-store-origin") || "").replace(/\/$/, "");
+    const storeOrigin = requestedStoreOrigin === "https://lojaorla.com.br" ? requestedStoreOrigin : url.origin;
+    const isPublicHttps = storeOrigin.startsWith("https://") && !/localhost|127\.0\.0\.1/.test(storeOrigin);
     if (isPublicHttps) {
       preference.back_urls = {
-        success: `${url.origin}/pagamento.html?resultado=sucesso`,
-        pending: `${url.origin}/pagamento.html?resultado=pendente`,
-        failure: `${url.origin}/pagamento.html?resultado=falha`,
+        success: `${storeOrigin}/pagamento.html?resultado=sucesso`,
+        pending: `${storeOrigin}/pagamento.html?resultado=pendente`,
+        failure: `${storeOrigin}/pagamento.html?resultado=falha`,
       };
       preference.auto_return = "approved";
       preference.notification_url = `${url.origin}/api/payment-webhook`;

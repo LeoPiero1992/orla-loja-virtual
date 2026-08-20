@@ -1,21 +1,20 @@
-import { hasCompletedOrder } from "../_lib/orders-db.js";
+const ORDER_BACKEND = "https://orla-loja-preview.pages.dev";
 
-const json = (data, status = 200) => new Response(JSON.stringify(data), {
-  status,
-  headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-});
-
-const normalize = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toUpperCase();
-const digits = value => String(value || "").replace(/\D/g, "");
-
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request }) {
   try {
-    const body = await request.json();
-    if (normalize(body.code) !== "PRIMEIRA COMPRA") return json({ valid: false, error: "Cupom não encontrado." }, 404);
-    if (!body.email || digits(body.cpf).length !== 11) return json({ valid: false, error: "Informe e-mail e CPF para validar o cupom." }, 400);
-    if (await hasCompletedOrder(env, body.email, body.cpf)) return json({ valid: false, error: "Este cupom é exclusivo para a primeira compra." }, 409);
-    return json({ valid: true, code: "PRIMEIRA COMPRA", label: "Primeira Compra", discountPercent: 15 });
+    const response = await fetch(`${ORDER_BACKEND}/api/validate-coupon`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: await request.text(),
+    });
+    return new Response(response.body, {
+      status: response.status,
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    });
   } catch (error) {
-    return json({ valid: false, error: error?.message || "Não foi possível validar o cupom." }, 400);
+    return new Response(JSON.stringify({ error: "Nao foi possivel validar o cupom." }), {
+      status: 502,
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    });
   }
 }
