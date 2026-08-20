@@ -4,6 +4,7 @@ import { onRequestPost as shippingQuote } from "./api/shipping-quote.js";
 import { handleAdminOrders, adminUser } from "./api/admin-orders.js";
 import { onRequestPost as customerOrder } from "./api/customer-order.js";
 import { onRequestPost as validateCoupon } from "./api/validate-coupon.js";
+import { onRequestGet as addressByCep } from "./api/address-by-cep.js";
 
 const notFound = () => new Response("Not found", { status: 404 });
 
@@ -20,6 +21,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/shipping-quote") {
       return shippingQuote(context);
+    }
+    if (request.method === "GET" && url.pathname === "/api/address-by-cep") {
+      return addressByCep(context);
     }
     if (url.pathname.startsWith("/api/admin/orders")) {
       return handleAdminOrders({ ...context, pathname: url.pathname });
