@@ -1,4 +1,5 @@
 export const FREE_SHIPPING_MINIMUM = 500;
+const FRENET_FALLBACK_ORIGIN = "https://orla-loja-preview.pages.dev";
 
 const WEIGHT_KG = {
   Top: 0.080,
@@ -23,7 +24,26 @@ export function packageFor(items) {
 
 export async function quoteFrenet({ env, recipientCep, subtotal, items, serviceCode }) {
   if (!env.FRENET_TOKEN || !env.FRENET_SELLER_CEP) {
-    throw new Error("A cotacao de frete ainda nao foi ativada no servidor.");
+    const response = await fetch(`${FRENET_FALLBACK_ORIGIN}/api/shipping-quote`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        recipientCep: String(recipientCep).replace(/\D/g, ""),
+        items: items.map(item => ({ sku: item.sku, quantity: item.quantity })),
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !Array.isArray(data.options)) {
+      throw new Error(data.error || "A cotacao de frete nao respondeu no momento.");
+    }
+    const options = data.options.map(option => ({
+      code: String(option.code || ""),
+      carrier: String(option.carrier || "Transportadora"),
+      name: String(option.name || "Entrega"),
+      price: Number(option.price),
+      deliveryTime: Number(option.deliveryTime || 0),
+    })).filter(option => option.code && Number.isFinite(option.price));
+    return serviceCode ? options.filter(option => option.code === String(serviceCode)) : options;
   }
   const payload = {
     SellerCEP: String(env.FRENET_SELLER_CEP).replace(/\D/g, ""),

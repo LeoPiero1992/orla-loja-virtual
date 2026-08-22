@@ -8,6 +8,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 
 const digits = value => String(value || "").replace(/\D/g, "");
 const normalizeCoupon = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toUpperCase();
+const AFLORE_DISCOUNT = 0.30;
 
 async function loadStoreData(env, origin, filename, prefix) {
   const response = await env.ASSETS.fetch(`${origin}/${filename}`);
@@ -26,7 +27,9 @@ function buildCatalog(products, stock) {
       for (const size of variant.sizes || []) {
         const sku = `${product.ref}${variant.code}${size}`;
         const basePrice = Number(variant.price);
-        const effectivePrice = basePrice;
+        const effectivePrice = product.collection === "06"
+          ? Math.round(basePrice * (1 - AFLORE_DISCOUNT) * 100) / 100
+          : basePrice;
         catalog.set(sku, {
           sku,
           ref: product.ref,
@@ -110,6 +113,8 @@ export async function onRequestPost({ request, env }) {
       if (!shipping) return json({ error: "A opcao de frete escolhida nao esta mais disponivel. Calcule novamente." }, 409);
     }
 
+    const paymentTotal = subtotal + Number(shipping.price || 0);
+    const maximumInstallments = Math.max(1, Math.min(12, Math.floor(paymentTotal / 100)));
     const nameParts = String(customer.nome).trim().split(/\s+/);
     const phone = digits(customer.telefone);
     const orderId = `ORLA-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
@@ -141,7 +146,7 @@ export async function onRequestPost({ request, env }) {
           state_name: String(customer.estado || ""),
         },
       },
-      payment_methods: { installments: 10 },
+      payment_methods: { installments: maximumInstallments },
       metadata: {
         order_id: orderId,
         customer_phone: phone,

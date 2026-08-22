@@ -3,7 +3,8 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
   headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
 });
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   const url = new URL(request.url);
   let body = {};
   try { body = await request.json(); } catch {}
@@ -22,6 +23,17 @@ export async function onRequestPost({ request, env }) {
       paymentStatus: String(payment.status || "pending"),
       paymentMethod: payment.payment_type_id === "bank_transfer" ? "Pix" : `Cartão · ${payment.installments || 1}x`,
     });
+    if (payment.status === "approved") {
+      const order = await getOrder(env, String(payment.external_reference));
+      if (order) {
+        const notification = sendPaymentApprovedWhatsApp(env, order).catch(error => {
+          console.error("ORLA WhatsApp background error", { order_id: order.id, error: error?.message });
+        });
+        if (context.ctx?.waitUntil) context.ctx.waitUntil(notification);
+        else if (context.waitUntil) context.waitUntil(notification);
+        else await notification;
+      }
+    }
   }
   console.log("ORLA payment update", {
     payment_id: payment.id,
@@ -30,4 +42,5 @@ export async function onRequestPost({ request, env }) {
   });
   return json({ received: true });
 }
-import { updatePayment } from "../_lib/orders-db.js";
+import { getOrder, updatePayment } from "../_lib/orders-db.js";
+import { sendPaymentApprovedWhatsApp } from "../_lib/whatsapp.js";

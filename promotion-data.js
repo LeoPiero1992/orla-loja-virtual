@@ -32,4 +32,3 @@
     isPromotional: product => product && product.collection === "06",
   };
 })();
-
