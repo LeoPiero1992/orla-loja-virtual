@@ -1,5 +1,5 @@
 import { FREE_SHIPPING_MINIMUM, quoteFrenet } from "../_lib/frenet.js";
-import { createOrder, hasCompletedOrder } from "../_lib/orders-db.js";
+import { createOrder } from "../_lib/orders-db.js";
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -79,9 +79,8 @@ export async function onRequestPost({ request, env }) {
     const couponCode = normalizeCoupon(body.couponCode);
     let discountPercent = 0;
     if (couponCode) {
-      if (couponCode !== "PRIMEIRA COMPRA") return json({ error: "Cupom não encontrado." }, 404);
-      if (await hasCompletedOrder(env, customer.email, customer.cpf)) return json({ error: "Este cupom é exclusivo para a primeira compra." }, 409);
-      discountPercent = 15;
+      if (couponCode !== "LUCIANA10") return json({ error: "Cupom não encontrado." }, 404);
+      discountPercent = 10;
     }
     const orderItems = validatedItems.map(item => ({ ...item, price: Math.round(item.price * (1 - discountPercent / 100) * 100) / 100 }));
     const items = orderItems.map(official => {
