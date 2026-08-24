@@ -9,6 +9,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 const digits = value => String(value || "").replace(/\D/g, "");
 const normalizeCoupon = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toUpperCase();
 const AFLORE_DISCOUNT = 0.30;
+const COUPONS = new Set(["LUCIANA10", "NATALIA10", "DEBORA10"]);
 
 async function loadStoreData(env, origin, filename, prefix) {
   const response = await env.ASSETS.fetch(`${origin}/${filename}`);
@@ -79,7 +80,7 @@ export async function onRequestPost({ request, env }) {
     const couponCode = normalizeCoupon(body.couponCode);
     let discountPercent = 0;
     if (couponCode) {
-      if (couponCode !== "LUCIANA10") return json({ error: "Cupom não encontrado." }, 404);
+      if (!COUPONS.has(couponCode)) return json({ error: "Cupom não encontrado." }, 404);
       discountPercent = 10;
     }
     const orderItems = validatedItems.map(item => ({ ...item, price: Math.round(item.price * (1 - discountPercent / 100) * 100) / 100 }));
