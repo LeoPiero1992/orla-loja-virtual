@@ -68,7 +68,7 @@
     </div>
   </main>
   <footer class="footer"><span>ORLA · moda praia brasileira</span><span><a href="https://wa.me/554333740244" target="_blank" rel="noopener">Atendimento</a> · <a href="trocas-e-devolucoes.html">Trocas e devoluções</a> · <a href="entregas.html">Entregas</a></span></footer>
-  <script src="products-data.js"></script><script src="promotion-data.js"></script><script src="stock-data.js"></script><script>
+  <script src="products-data.js?v=estoque-audit-20260824"></script><script src="promotion-data.js"></script><script src="stock-data.js"></script><script>
     const BRL=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const byId=id=>document.getElementById(id),orderItems=byId('orderItems'),totals=byId('totals'),stage1Error=byId('stage1Error'),successMessage=byId('successMessage'),paymentButton=byId('paymentButton'),deliveryIntro=byId('deliveryIntro'),shippingOptions=byId('shippingOptions'),shippingError=byId('shippingError'),deliveryContinue=byId('deliveryContinue'),nome=byId('nome'),cpf=byId('cpf'),telefone=byId('telefone'),email=byId('email'),cep=byId('cep'),cepStatus=byId('cepStatus'),numero=byId('numero'),rua=byId('rua'),bairro=byId('bairro'),complemento=byId('complemento'),cidade=byId('cidade'),estado=byId('estado'),salvar=byId('salvar'),novidades=byId('novidades'),couponInput=byId('couponInput'),couponMessage=byId('couponMessage'),shippingPreviewCep=byId('shippingPreviewCep'),shippingPreviewResult=byId('shippingPreviewResult');
     function readJSON(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')||fallback}catch{return fallback}}
