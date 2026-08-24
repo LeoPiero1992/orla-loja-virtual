@@ -1,0 +1,44 @@
+name: Atualizar estoque pelo SharePoint
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: orla-stock-sync
+  cancel-in-progress: false
+
+jobs:
+  sync-stock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar leitor da planilha
+        run: pip install openpyxl==3.1.5
+      - name: Ler SharePoint e gerar estoque
+        env:
+          SP_TENANT_ID: ${{ secrets.SP_TENANT_ID }}
+          SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
+          SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
+          SHAREPOINT_FILE_URL: "https://luamorenacombr-my.sharepoint.com/:x:/g/personal/comercial01_upvest_com_br/IQA1QqNvCvr3SaxjB6WEZc2CAaBT9-veMSfspfhgq1MvhfA?e=aMCGnl"
+        run: python scripts/sync_sharepoint_stock.py
+      - name: Publicar alteração do estoque
+        run: |
+          if git diff --quiet -- stock-data.js stock-meta.json dist/client/stock-data.js dist/client/stock-meta.json; then
+            echo "O estoque não mudou."
+            exit 0
+          fi
+          git config user.name "ORLA Estoque Automático"
+          git config user.email "estoque-automatico@users.noreply.github.com"
+          git add stock-data.js stock-meta.json dist/client/stock-data.js dist/client/stock-meta.json
+          git commit -m "Atualiza estoque automático do SharePoint"
+          git push origin HEAD:main

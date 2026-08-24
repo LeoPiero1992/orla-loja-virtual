@@ -107,5 +107,6 @@
     function fillSaved(){for(const [key,value] of Object.entries(savedCustomer)){const field=document.getElementById(key);if(field&&field.type!=='checkbox')field.value=value||''}novidades.checked=Boolean(savedCustomer.novidades);salvar.checked=Object.keys(savedCustomer).length>0}
     cpf.addEventListener('input',formatCpf);telefone.addEventListener('input',formatPhone);cep.addEventListener('input',()=>{formatCep();lastQuoteKey='';shippingCode='';shippingPrice=0;lastResolvedCep='';scheduleCepLookup(false)});cep.addEventListener('change',()=>lookupCep({focusNumber:false}));cep.addEventListener('blur',()=>lookupCep({focusNumber:false}));fillSaved();drawSummary();setTimeout(()=>scheduleCepLookup(false),450);window.addEventListener('pageshow',()=>setTimeout(()=>scheduleCepLookup(false),250));
   </script>
+  <script src="cart-reservation.js?v=20260824"></script>
 </body>
 </html>

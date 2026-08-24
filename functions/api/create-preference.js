@@ -1,5 +1,6 @@
 import { FREE_SHIPPING_MINIMUM, quoteFrenet } from "../_lib/frenet.js";
 import { createOrder } from "../_lib/orders-db.js";
+import { attachReservationToOrder, requireActiveReservation } from "../_lib/inventory-reservations.js";
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -77,6 +78,7 @@ export async function onRequestPost({ request, env }) {
       if (quantity > official.available) throw new Error(`${official.name} nao possui essa quantidade em estoque.`);
       return { ...official, quantity };
     });
+    const reservationSessionId = await requireActiveReservation(env, body.reservationSessionId, validatedItems);
     const couponCode = normalizeCoupon(body.couponCode);
     let discountPercent = 0;
     if (couponCode) {
@@ -208,6 +210,7 @@ export async function onRequestPost({ request, env }) {
       total: subtotal + Number(shipping.price || 0),
       preferenceId: String(mpData.id || ""),
     });
+    await attachReservationToOrder(env, reservationSessionId, orderId);
     return json({ checkoutUrl, orderId });
   } catch (error) {
     return json({ error: error?.message || "Nao foi possivel iniciar o pagamento." }, 400);

@@ -5,6 +5,7 @@ import { handleAdminOrders, adminUser } from "./api/admin-orders.js";
 import { onRequestPost as customerOrder } from "./api/customer-order.js";
 import { onRequestPost as validateCoupon } from "./api/validate-coupon.js";
 import { onRequestGet as addressByCep } from "./api/address-by-cep.js";
+import { onRequestDelete as releaseCart, onRequestGet as cartAvailability, onRequestPost as reserveCart } from "./api/cart-reservation.js";
 
 const notFound = () => new Response("Not found", { status: 404 });
 
@@ -33,6 +34,11 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/validate-coupon") {
       return validateCoupon(context);
+    }
+    if (url.pathname === "/api/cart-reservation") {
+      if (request.method === "GET") return cartAvailability(context);
+      if (request.method === "POST") return reserveCart(context);
+      if (request.method === "DELETE") return releaseCart(context);
     }
     if ((url.pathname === "/admin" || url.pathname === "/admin.html") && !adminUser(request, env)) {
       return Response.redirect(`${url.origin}/signin-with-chatgpt?return_to=/admin.html`, 302);

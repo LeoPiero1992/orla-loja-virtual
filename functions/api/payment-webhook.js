@@ -23,6 +23,7 @@ export async function onRequestPost(context) {
       paymentStatus: String(payment.status || "pending"),
       paymentMethod: payment.payment_type_id === "bank_transfer" ? "Pix" : `Cartão · ${payment.installments || 1}x`,
     });
+    await updateReservationPayment(env, String(payment.external_reference), String(payment.status || "pending"));
     if (payment.status === "approved") {
       const order = await getOrder(env, String(payment.external_reference));
       if (order) {
@@ -44,3 +45,4 @@ export async function onRequestPost(context) {
 }
 import { getOrder, updatePayment } from "../_lib/orders-db.js";
 import { sendPaymentApprovedWhatsApp } from "../_lib/whatsapp.js";
+import { updateReservationPayment } from "../_lib/inventory-reservations.js";
