@@ -10,7 +10,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 const digits = value => String(value || "").replace(/\D/g, "");
 const normalizeCoupon = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toUpperCase();
 const AFLORE_DISCOUNT = 0.30;
-const COUPONS = new Set(["LUCIANA10", "NATALIA10", "DEBORA10"]);
+const COUPONS = new Set(["LUCIANA10", "NATALIA10", "DEBORA10", "SHEILA10"]);
 
 async function loadStoreData(env, origin, filename, prefix) {
   const response = await env.ASSETS.fetch(`${origin}/${filename}`);

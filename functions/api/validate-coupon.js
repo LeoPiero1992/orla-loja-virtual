@@ -4,7 +4,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), {
 });
 
 const normalize = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toUpperCase();
-const COUPONS = new Set(["LUCIANA10", "NATALIA10", "DEBORA10"]);
+const COUPONS = new Set(["LUCIANA10", "NATALIA10", "DEBORA10", "SHEILA10"]);
 export async function onRequestPost({ request, env }) {
   try {
     const body = await request.json();

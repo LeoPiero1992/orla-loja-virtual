@@ -1,20 +1,17 @@
-const ORDER_BACKEND = "https://orla-loja-preview.pages.dev";
+const COUPONS = new Set(["LUCIANA10", "NATALIA10", "DEBORA10", "SHEILA10"]);
+
+const json = (body, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+});
 
 export async function onRequestPost({ request }) {
   try {
-    const response = await fetch(`${ORDER_BACKEND}/api/validate-coupon`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: await request.text(),
-    });
-    return new Response(response.body, {
-      status: response.status,
-      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-    });
+    const body = await request.json();
+    const code = String(body?.code || "").trim().toUpperCase();
+    if (!COUPONS.has(code)) return json({ valid: false, error: "Cupom não encontrado." }, 404);
+    return json({ valid: true, code, discountPercent: 10 });
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Nao foi possivel validar o cupom." }), {
-      status: 502,
-      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-    });
+    return json({ valid: false, error: "Não foi possível validar o cupom." }, 400);
   }
 }
